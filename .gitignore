@@ -1,0 +1,136 @@
+# ============================================================
+# Python (github.com/github/gitignore/blob/main/Python.gitignore)
+# ============================================================
+
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[codz]
+*$py.class
+
+# C extensions
+*.so
+
+# Distribution / packaging
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# PyInstaller
+*.manifest
+*.spec
+
+# Installer logs
+pip-log.txt
+pip-delete-this-directory.txt
+
+# Unit test / coverage reports
+htmlcov/
+.tox/
+.nox/
+.coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+*.py.cover
+.hypothesis/
+.pytest_cache/
+cover/
+
+# Translations
+*.mo
+*.pot
+
+# Environments
+.env
+.envrc
+.venv
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+
+# PEP 582
+__pypackages__/
+
+# mypy
+.mypy_cache/
+.dmypy.json
+dmypy.json
+
+# Pyre type checker
+.pyre/
+
+# pytype static type analyzer
+.pytype/
+
+# Cython debug symbols
+cython_debug/
+
+# Ruff
+.ruff_cache/
+
+# pdm
+.pdm-python
+.pdm-build/
+
+# pixi
+.pixi
+
+# ============================================================
+# Project-specific
+# ============================================================
+
+# App runtime data (local to each user — not committed)
+*.db
+*.db-shm
+*.db-wal
+epub_cache/
+
+# Settings (contains local paths specific to each machine)
+settings.json
+
+# Logs
+*.log
+
+# Qt / PySide6
+*.qmlc
+*.jsc
+
+# ============================================================
+# Claude Code
+# ============================================================
+.claude/settings.local.json
+.claude/projects/
+
+# ============================================================
+# IDE
+# ============================================================
+.vscode/
+.idea/
+*.suo
+*.user
+
+# ============================================================
+# OS
+# ============================================================
+.DS_Store
+Thumbs.db
+desktop.ini
