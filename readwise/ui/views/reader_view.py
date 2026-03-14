@@ -541,9 +541,20 @@ class ReaderView(QWidget):
         elif self._tts.state() == QTextToSpeech.State.Paused:
             self._tts.resume()
         else:
-            # Extract visible text from page then speak
+            # Extract text from the top of the visible viewport to end of page.
+            # caretRangeFromPoint finds the text node at viewport position (10, 10),
+            # then a Range captures everything from that node to end of body.
             self.reader_panel.web.page().runJavaScript(
-                "document.body.innerText",
+                """
+                (function() {
+                    var range = document.caretRangeFromPoint(10, 10);
+                    if (!range) return document.body.innerText;
+                    var full = document.createRange();
+                    full.setStart(range.startContainer, range.startOffset);
+                    full.setEnd(document.body, document.body.childNodes.length);
+                    return full.toString().trim();
+                })()
+                """,
                 self._tts_speak,
             )
 
@@ -562,7 +573,7 @@ class ReaderView(QWidget):
 
     def _on_tts_state_changed(self, state: QTextToSpeech.State) -> None:
         speaking = state == QTextToSpeech.State.Speaking
-        paused   = state == QTextToSpeech.State.Paused
+        paused = state == QTextToSpeech.State.Paused
         self.tts_play_btn.setChecked(speaking or paused)
         if speaking or paused:
             self.tts_play_btn.setText("⏸ Pause" if speaking else "▶ Resume")
