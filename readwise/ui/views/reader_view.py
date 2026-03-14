@@ -13,6 +13,7 @@ from __future__ import annotations
 
 from PySide6.QtCore import QTimer, Signal, Qt
 from PySide6.QtGui import QKeySequence, QShortcut
+from PySide6.QtTextToSpeech import QTextToSpeech
 from PySide6.QtWidgets import (
     QComboBox,
     QDialog,
@@ -21,6 +22,7 @@ from PySide6.QtWidgets import (
     QMessageBox,
     QPushButton,
     QSizePolicy,
+    QSlider,
     QToolButton,
     QVBoxLayout,
     QWidget,
@@ -56,7 +58,9 @@ class ReaderView(QWidget):
         self._session_mode = True        # True = session nav, False = chapter nav
         self._current_scroll_pct = 0     # last known scroll position (0-100)
 
+        self._tts: QTextToSpeech | None = None
         self._setup_ui()
+        self._setup_tts()
         QTimer.singleShot(0, self._load_book)
 
     # ------------------------------------------------------------------
@@ -132,6 +136,44 @@ class ReaderView(QWidget):
         nav_layout.addWidget(self.progress_label)
 
         layout.addWidget(nav_bar)
+
+        # ── TTS bar ───────────────────────────────────────────────────
+        self.tts_bar = QWidget()
+        self.tts_bar.setStyleSheet(
+            "background: #f5f5f5; border-bottom: 1px solid #e0e0e0;"
+        )
+        self.tts_bar.setFixedHeight(40)
+        tts_layout = QHBoxLayout(self.tts_bar)
+        tts_layout.setContentsMargins(12, 0, 12, 0)
+        tts_layout.setSpacing(8)
+
+        tts_label = QLabel("🔊")
+        tts_layout.addWidget(tts_label)
+
+        self.tts_play_btn = QToolButton()
+        self.tts_play_btn.setText("▶ Read")
+        self.tts_play_btn.setCheckable(True)
+        self.tts_play_btn.setToolTip("Read page aloud (Space)")
+        self.tts_play_btn.clicked.connect(self._tts_play_pause)
+        tts_layout.addWidget(self.tts_play_btn)
+
+        tts_stop_btn = QToolButton()
+        tts_stop_btn.setText("■")
+        tts_stop_btn.setToolTip("Stop reading")
+        tts_stop_btn.clicked.connect(self._tts_stop)
+        tts_layout.addWidget(tts_stop_btn)
+
+        tts_layout.addWidget(QLabel("Rate:"))
+        self.tts_rate_slider = QSlider(Qt.Orientation.Horizontal)
+        self.tts_rate_slider.setRange(-10, 10)   # maps to -1.0 … 1.0
+        self.tts_rate_slider.setValue(0)
+        self.tts_rate_slider.setFixedWidth(100)
+        self.tts_rate_slider.setToolTip("Speech rate (centre = normal)")
+        self.tts_rate_slider.valueChanged.connect(self._tts_set_rate)
+        tts_layout.addWidget(self.tts_rate_slider)
+
+        tts_layout.addStretch()
+        layout.addWidget(self.tts_bar)
 
         # ── Reader panel ─────────────────────────────────────────────
         self.reader_panel = ReaderPanel()
@@ -232,6 +274,7 @@ class ReaderView(QWidget):
     # ------------------------------------------------------------------
 
     def _render(self) -> None:
+        self._tts_stop()
         if self._session_mode:
             self._render_session()
         else:
@@ -451,6 +494,7 @@ class ReaderView(QWidget):
     # ------------------------------------------------------------------
 
     def _end_session(self) -> None:
+        self._tts_stop()
         if self.session:
             plan = get_plan_for_book(self.book_id)
             if plan:
@@ -480,3 +524,47 @@ class ReaderView(QWidget):
 
     def _show_error(self, msg: str) -> None:
         QMessageBox.critical(self, "Reader Error", msg)
+
+    # ------------------------------------------------------------------
+    # Text-to-speech (spike)
+    # ------------------------------------------------------------------
+
+    def _setup_tts(self) -> None:
+        self._tts = QTextToSpeech(self)
+        self._tts.stateChanged.connect(self._on_tts_state_changed)
+
+    def _tts_play_pause(self) -> None:
+        if self._tts is None:
+            return
+        if self._tts.state() == QTextToSpeech.State.Speaking:
+            self._tts.pause()
+        elif self._tts.state() == QTextToSpeech.State.Paused:
+            self._tts.resume()
+        else:
+            # Extract visible text from page then speak
+            self.reader_panel.web.page().runJavaScript(
+                "document.body.innerText",
+                self._tts_speak,
+            )
+
+    def _tts_speak(self, text: str | None) -> None:
+        if not text or self._tts is None:
+            return
+        self._tts.say(text)
+
+    def _tts_stop(self) -> None:
+        if self._tts is not None:
+            self._tts.stop()
+
+    def _tts_set_rate(self, value: int) -> None:
+        if self._tts is not None:
+            self._tts.setRate(value / 10.0)   # -1.0 … 1.0
+
+    def _on_tts_state_changed(self, state: QTextToSpeech.State) -> None:
+        speaking = state == QTextToSpeech.State.Speaking
+        paused   = state == QTextToSpeech.State.Paused
+        self.tts_play_btn.setChecked(speaking or paused)
+        if speaking or paused:
+            self.tts_play_btn.setText("⏸ Pause" if speaking else "▶ Resume")
+        else:
+            self.tts_play_btn.setText("▶ Read")
