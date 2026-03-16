@@ -23,7 +23,7 @@ A desktop reading app built around focus and consistency. Break books into manag
 ```bash
 # Clone the repo
 git clone <repo-url>
-cd reading
+cd readwise
 
 # Create and activate a virtual environment
 python -m venv .venv
@@ -81,6 +81,21 @@ The app **never modifies your Calibre library**. All app data is stored separate
 pip install -e ".[dev]"
 pytest
 ```
+
+> **Note on Windows:** PySide6 must be pinned to `6.8.2`. If you see
+> `ImportError: DLL load failed while importing QtWidgets`, delete `.venv`
+> and reinstall with `pip install "PySide6==6.8.2"`.
+
+---
+
+## About this project
+
+This is a personal tool built for my own reading workflow — if you stumbled
+across it and find it useful, great. Issues are welcome but I'm not actively
+seeking contributions.
+
+The codebase is built with AI assistance (Claude). Architecture, feature
+decisions, and direction are all mine; Claude handles the implementation.
 
 ---
 
